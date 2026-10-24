@@ -1,0 +1,15 @@
+# 虚拟环境
+venv/
+.venv/
+# Python 缓存
+__pycache__/
+*.py[cod]
+# 密钥与环境配置（永远不要提交）
+.env
+.env.*
+# 运行时数据：代码进仓库，数据不进仓库
+Tool/todos.json
+Memory/memory.json
+# 编辑器
+.vscode/
+.idea/
