@@ -6,6 +6,7 @@ from langchain_core.messages import HumanMessage, ToolMessage
 
 sys.stdout.reconfigure(encoding="utf-8")
 DATA_FILE = Path(__file__).parent / "todos.json"
+
 llm = ChatOpenAI(
     model="google/gemma-4-e4b",
     base_url="http://127.0.0.1:1234/v1",

@@ -10,6 +10,7 @@ __pycache__/
 # 运行时数据：代码进仓库，数据不进仓库
 Tool/todos.json
 Memory/memory.json
+FastAPI/todos.json
 # 编辑器
 .vscode/
 .idea/
