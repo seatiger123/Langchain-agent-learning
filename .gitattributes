@@ -1,0 +1,4 @@
+# 换行符规则：跟着仓库走，不依赖每台电脑的 git 配置
+* text=auto
+# shell 脚本必须永远 LF，否则 bash 会把 \r 当命令
+*.sh text eol=lf
