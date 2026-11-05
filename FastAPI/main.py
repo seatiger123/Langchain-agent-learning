@@ -2,7 +2,9 @@ import json,os
 from pathlib import Path
 from fastapi import FastAPI,HTTPException
 from pydantic import BaseModel,Field
-from agent import run_agent
+from langchain_core.messages import HumanMessage
+from graph_app import app as agent_app
+from langgraph.types import Command
 from store import store
 
 app = FastAPI()
@@ -16,13 +18,36 @@ class TodoOut(BaseModel):
     done:bool
 
 class ChatRequest(BaseModel):
-    question: str = Field(min_length=1, max_length=500, description="用户的问题")
-    dangerous_ok:bool = Field(default=False, description="放行危险操作（delete）。仅当用户看到 needs_confirmation 并明确同意后才置true")
+    question: str = Field(min_length=1, max_length=500)
+    thread_id: str = Field(min_length=1, max_length=64, description="会话ID，同一ID共享一段记忆")
 
+class ConfirmRequest(BaseModel):
+    thread_id: str = Field(min_length=1, max_length=64)
+    approve: bool = Field(description="是否批准该会话正在暂停中的危险操作")
 
 @app.post("/chat")
 def chat(req: ChatRequest):
-    return run_agent(req.question, req.dangerous_ok)
+    config = {"configurable":{"thread_id":req.thread_id}}
+    result = agent_app.invoke({"messages":[HumanMessage(content=req.question)]},config)
+    intr = result.get("__interrupt__")
+    if intr:
+        info = intr[0].value
+        return {"type":"needs_confirmation","thread_id":req.thread_id,"tool":info["tool"],"args":info["args"]}
+    return {"type":"answer","answer":result["messages"][-1].content}
+
+@app.post("/chat/confirm")
+def chat_confirm(req: ConfirmRequest):
+    config = {"configurable": {"thread_id": req.thread_id}}
+    snap = agent_app.get_state(config)
+    if not snap.next:
+        raise HTTPException(status_code=409, detail=f"会话{req.thread_id}没有等待确认的操作")
+    
+    result = agent_app.invoke(Command(resume=req.approve),config)
+    intr = result.get("__interrupt__")
+    if intr:
+        info = intr[0].value
+        return {"type":"needs_confirmation","thread_id":req.thread_id,"tool":info["tool"],"args":info["args"]}
+    return {"type":"answer","answer":result["messages"][-1].content}
 
 @app.get("/")
 def root():
