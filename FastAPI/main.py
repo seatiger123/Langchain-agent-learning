@@ -6,8 +6,13 @@ from langchain_core.messages import HumanMessage
 from graph_app import app as agent_app
 from langgraph.types import Command
 from store import store
+from rag_query import ask
+
 
 app = FastAPI()
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=1,max_length=500)
 
 class TodoCreate(BaseModel):
     text: str = Field(min_length=1, max_length=200, description="代办内容,1-200字")
@@ -48,6 +53,11 @@ def chat_confirm(req: ConfirmRequest):
         info = intr[0].value
         return {"type":"needs_confirmation","thread_id":req.thread_id,"tool":info["tool"],"args":info["args"]}
     return {"type":"answer","answer":result["messages"][-1].content}
+
+@app.post("/ask")
+def ask_kb(req: AskRequest):
+    answer, sources = ask(req.question)
+    return {"answer":answer, "sources":[s["source"] for s in sources]}
 
 @app.get("/")
 def root():

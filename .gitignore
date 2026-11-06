@@ -15,3 +15,4 @@ FastAPI/todos.json
 .vscode/
 .idea/
 FastAPI/checkpoints.sqlite*
+FastAPI/chroma_db
