@@ -5,6 +5,28 @@ import chromadb
 from pathlib import Path
 from langchain_openai import ChatOpenAI,OpenAIEmbeddings
 from langchain_core.messages import HumanMessage
+from langchain_core.tools import tool
+
+@tool
+def search_notes(question: str) -> str:
+    """在课程知识库中检索资料。凡用户询问概念、定义、定理、原理等知识性问题
+    （如"什么是双射"），必须先调用本工具查资料再回答，禁止凭记忆回答知识题。
+    若返回的资料与问题无关，必须回答"知识库中没有相关内容"，禁止使用你自己
+    训练时学到的知识回答。回答时必须注明资料来源文件名；若资料与问题无关，
+    如实说明未找到。"""
+    qv = embedder.embed_query(question)
+    res = col.query(query_embeddings=[qv], n_results=3)
+    cards, sources = res["documents"][0], res["metadatas"][0]
+    THRESHOLD = 0.75
+    best_dist = res["distances"][0][0]
+    if best_dist > THRESHOLD:      # 最近的卡都太远 = 库里根本没有
+        return "知识库中没有找到与问题相关的资料。"
+    if not cards:
+        return "知识库里没有找到相关资料。"
+    parts = []
+    for i,(c, s) in enumerate(zip(cards, sources), 1):
+        parts.append(f"[资料{i}] (来源： {s['source']}) \n{c}")
+    return "\n\n".join(parts)
 
 DB_DIR = Path(__file__).parent / "chroma_db"
 col = chromadb.PersistentClient(path=str(DB_DIR)).get_collection("diary")

@@ -2,6 +2,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage,ToolMessage
 
+from rag_query import search_notes
 from store import store
 
 @tool
@@ -44,7 +45,7 @@ def delete_todo(todo_id:int) -> str:
         return f"错误：不存在编号为 {todo_id} 的待办。"
     return f"待办 #{todo_id} 已删除：{item['text']}"
 
-tools = [add_todo,list_todos,complete_todo,delete_todo]
+tools = [add_todo,list_todos,complete_todo,delete_todo,search_notes]
 DANGEROUS_TOOLS = {"delete_todo"}
 tool_map = {t.name: t for t in tools}
 
