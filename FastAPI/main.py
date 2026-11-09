@@ -8,6 +8,12 @@ from langgraph.types import Command
 from store import store
 from rag_query import ask
 
+from fastapi import FastAPI, HTTPException, Depends
+from store import store, TodoStore
+
+def get_store() -> TodoStore:
+    return store
+
 
 app = FastAPI()
 
@@ -64,13 +70,13 @@ def root():
     return {"message":"Hello FastAPI"}
 
 @app.get("/todos",response_model=list[TodoOut])
-def list_todos(done: bool | None = None):
+def list_todos(done: bool | None = None, store: TodoStore = Depends(get_store)):
     if done is None:
         return store.items
     return [t for t in store.items if t["done"] == done]
 
 @app.get("/todos/{todo_id}",response_model=TodoOut)
-def get_todo(todo_id:int):
+def get_todo(todo_id:int, store: TodoStore = Depends(get_store)):
     item = store.get(todo_id)
     if item is None:
         raise HTTPException(status_code=404,detail=f"不存在编号为{todo_id}的待办")
@@ -79,11 +85,11 @@ def get_todo(todo_id:int):
 
 
 @app.post("/todos", status_code=201,response_model=TodoOut)
-def create_todo(data: TodoCreate):
+def create_todo(data: TodoCreate, store: TodoStore = Depends(get_store)):
     return store.add(data.text)
 
 @app.patch("/todos/{todo_id}/complete",response_model=TodoOut)
-def complete_todo(todo_id: int):
+def complete_todo(todo_id: int, store: TodoStore = Depends(get_store)):
     item = store.get(todo_id)
     if item is None:
         raise HTTPException(status_code=404,detail=f"不存在编号为{todo_id}的待办")
@@ -93,7 +99,7 @@ def complete_todo(todo_id: int):
     return item
 
 @app.delete("/todos/{todo_id}",status_code=204)
-def delete_todo(todo_id: int):
+def delete_todo(todo_id: int, store: TodoStore = Depends(get_store)):
     item = store.delete(todo_id)
     if item is None:
         raise HTTPException(status_code=404,detail=f"不存在编号为{todo_id}的待办")

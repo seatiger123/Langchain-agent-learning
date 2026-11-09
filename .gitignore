@@ -3,6 +3,7 @@ venv/
 .venv/
 # Python 缓存
 __pycache__/
+.pytest_cache/
 *.py[cod]
 # 密钥与环境配置（永远不要提交）
 .env
